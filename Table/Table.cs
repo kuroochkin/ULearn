@@ -10,6 +10,16 @@ public class Table<TRows, TColumns, TValues>
 
 	public Dictionary<TColumns, int> Columns { get; set; }
 
+	public ClassOpen<TRows, TColumns, TValues> Open
+	{
+		get { return new ClassOpen<TRows, TColumns, TValues>(this); }
+	}
+
+	public ClassExisted<TRows, TColumns, TValues> Existed
+	{
+		get { return new ClassExisted<TRows, TColumns, TValues>(this); }
+	}
+
 	private int _rowsCounter;
 	private int _columnsCounter;
 
@@ -48,10 +58,42 @@ public class Table<TRows, TColumns, TValues>
 
 	public void AddRow(TRows rowItem)
 	{
-
-		if (add(rowItem))
-
+		if (BoolAddRow(rowItem))
 			++_rowsCount.count;
+	}
 
+	private bool BoolAddColumn(TColumns columnItem)
+	{
+		if (!Columns.ContainsKey(columnItem))
+		{
+			Columns[columnItem] = _columnsCounter;
+			++_columnsCounter;
+			return true;
+		}
+
+		return false;
+	}
+	public void AddColumn(TColumns columnItem)
+	{
+		if (BoolAddColumn(columnItem))
+			++_columnsCount.count;
+	}
+}
+
+public class ClassOpen<TRows, TColumns, TValues>
+{
+	public TValues[,] Values { get; set; }
+	public ClassOpen(Table<TRows, TColumns, TValues> table)
+	{
+		Values = table.Values;
+	}
+}
+
+public class ClassExisted<TRows, TColumns, TValues>
+{
+	public TValues[,] Values { get; set; }
+	public ClassExisted(Table<TRows, TColumns, TValues> table)
+	{
+		Values = table.Values;
 	}
 }
