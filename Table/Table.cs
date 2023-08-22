@@ -2,98 +2,63 @@
 
 namespace Table;
 
-public class Table<TRows, TColumns, TValues>
+public class Table<TRow, TColumn, TValue>
 {
-	public TValues[,] Values { get; set; }
 
-	public Dictionary<TRows, int> Rows { get; set; }
+	private bool IsExist(TRow iRow, TColumn iCol)
+		=> Rows.Contains(iRow) && Columns.Contains(iCol);
 
-	public Dictionary<TColumns, int> Columns { get; set; }
-
-	public ClassOpen<TRows, TColumns, TValues> Open
+	public TValue this[TRow iRow, TColumn iCol]
 	{
-		get { return new ClassOpen<TRows, TColumns, TValues>(this); }
-	}
-
-	public ClassExisted<TRows, TColumns, TValues> Existed
-	{
-		get { return new ClassExisted<TRows, TColumns, TValues>(this); }
-	}
-
-	private int _rowsCounter;
-	private int _columnsCounter;
-
-	private Counts _rowsCount;
-	private Counts _columnsCount;
-	public Counts _rows => _rowsCount;
-	public Counts _columns => _columnsCount;
-
-	public Table()
-	{
-		Rows = new Dictionary<TRows, int>(); 
-		Columns = new Dictionary<TColumns, int>();
-		Values = new TValues[100,100];
-	}
-
-	public struct Counts
-	{
-		public int count;
-		public int Count()
+		get
 		{
-			return count;
+			TValue value;
+			table.TryGetValue(new Tuple<TRow, TColumn>(iRow, iCol), out value);
+			if (!IsExist(iRow, iCol) && !IsOpen)
+				throw new ArgumentException();
+			return value;
+		}
+		set
+		{
+			if (!IsOpen && !IsExist(iRow, iCol))
+				throw new ArgumentException();
+
+			if (!Rows.Contains(iRow)) Rows.Add(iRow);
+			if (!Columns.Contains(iCol)) Columns.Add(iCol);
+			table[new Tuple<TRow, TColumn>(iRow, iCol)] = value;
 		}
 	}
 
-	private bool BoolAddRow(TRows rowItem)
+	public void AddRow(TRow row)
 	{
-		if (!Rows.ContainsKey(rowItem))
+		if (!Rows.Contains(row)) Rows.Add(row);
+	}
+
+	public void AddColumn(TColumn col)
+	{
+		if (!Columns.Contains(col)) Columns.Add(col);
+	}
+	public Table<TRow, TColumn, TValue> Open
+	{
+		get
 		{
-			Rows[rowItem] = _rowsCounter;
-			++_rowsCounter;
-			return true;
+			IsOpen = true;
+			return this;
 		}
-
-		return false;
 	}
-
-	public void AddRow(TRows rowItem)
+	public Table<TRow, TColumn, TValue> Existed
 	{
-		if (BoolAddRow(rowItem))
-			++_rowsCount.count;
-	}
-
-	private bool BoolAddColumn(TColumns columnItem)
-	{
-		if (!Columns.ContainsKey(columnItem))
+		get
 		{
-			Columns[columnItem] = _columnsCounter;
-			++_columnsCounter;
-			return true;
+			IsOpen = false;
+			return this;
 		}
+	}
 
-		return false;
-	}
-	public void AddColumn(TColumns columnItem)
-	{
-		if (BoolAddColumn(columnItem))
-			++_columnsCount.count;
-	}
-}
+	private bool IsOpen = true;
+	public List<TColumn> Columns { get; private set; } = new List<TColumn>();
+	public List<TRow> Rows { get; private set; } = new List<TRow>();
 
-public class ClassOpen<TRows, TColumns, TValues>
-{
-	public TValues[,] Values { get; set; }
-	public ClassOpen(Table<TRows, TColumns, TValues> table)
-	{
-		Values = table.Values;
-	}
-}
-
-public class ClassExisted<TRows, TColumns, TValues>
-{
-	public TValues[,] Values { get; set; }
-	public ClassExisted(Table<TRows, TColumns, TValues> table)
-	{
-		Values = table.Values;
-	}
+	private Dictionary<Tuple<TRow, TColumn>, TValue> table
+		= new Dictionary<Tuple<TRow, TColumn>, TValue>();
 }
