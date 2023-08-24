@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using Generics.Tables;
+using NUnit.Framework;
 
 namespace Table;
 

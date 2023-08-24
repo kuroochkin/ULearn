@@ -1,64 +1,87 @@
-﻿using NUnit.Framework;
+﻿namespace Generics.Tables;
 
-namespace Table;
-
-public class Table<TRow, TColumn, TValue>
+public class Table<TRow, TColumn, TVal>
 {
+	public List<TRow> Rows = new List<TRow>();
+	public List<TColumn> Columns = new List<TColumn>();
+	private Dictionary<string, TVal> vals = new Dictionary<string, TVal>();
+	private OpenIndexer openIdx;
+	private ExistedIndexer existIdx;
 
-	private bool IsExist(TRow iRow, TColumn iCol)
-		=> Rows.Contains(iRow) && Columns.Contains(iCol);
-
-	public TValue this[TRow iRow, TColumn iCol]
+	public Table()
 	{
-		get
+		openIdx = new OpenIndexer(this);
+		existIdx = new ExistedIndexer(this);
+	}
+
+	public void AddRow(TRow r)
+	{
+		if (!Rows.Contains(r)) Rows.Add(r);
+	}
+
+	public void AddColumn(TColumn c)
+	{
+		if (!Columns.Contains(c)) Columns.Add(c);
+	}
+
+	public OpenIndexer Open => openIdx;
+
+	public ExistedIndexer Existed => existIdx;
+	public class ExistedIndexer
+	{
+		private Table<TRow, TColumn, TVal> table;
+
+		internal ExistedIndexer(Table<TRow, TColumn, TVal> table)
 		{
-			TValue value;
-			table.TryGetValue(new Tuple<TRow, TColumn>(iRow, iCol), out value);
-			if (!IsExist(iRow, iCol) && !IsOpen)
-				throw new ArgumentException();
-			return value;
+			this.table = table;
 		}
-		set
+
+		public TVal this[TRow r, TColumn c]
 		{
-			if (!IsOpen && !IsExist(iRow, iCol))
-				throw new ArgumentException();
-
-			if (!Rows.Contains(iRow)) Rows.Add(iRow);
-			if (!Columns.Contains(iCol)) Columns.Add(iCol);
-			table[new Tuple<TRow, TColumn>(iRow, iCol)] = value;
+			get
+			{
+				var addr = r + ":" + c;
+				if (!table.Rows.Contains(r) || !table.Columns.Contains(c)) throw new ArgumentException();
+				if (!table.vals.ContainsKey(addr)) return default(TVal);
+				return table.vals[addr];
+			}
+			set
+			{
+				var addr = r + ":" + c;
+				if (!table.Rows.Contains(r) || !table.Columns.Contains(c)) throw new ArgumentException();
+				if (!table.vals.ContainsKey(addr))
+					table.vals.Add(addr, value);
+				else table.vals[addr] = value;
+			}
 		}
 	}
 
-	public void AddRow(TRow row)
+	public class OpenIndexer
 	{
-		if (!Rows.Contains(row)) Rows.Add(row);
-	}
+		private Table<TRow, TColumn, TVal> table;
 
-	public void AddColumn(TColumn col)
-	{
-		if (!Columns.Contains(col)) Columns.Add(col);
-	}
-	public Table<TRow, TColumn, TValue> Open
-	{
-		get
+		internal OpenIndexer(Table<TRow, TColumn, TVal> table)
 		{
-			IsOpen = true;
-			return this;
+			this.table = table;
 		}
-	}
-	public Table<TRow, TColumn, TValue> Existed
-	{
-		get
+
+		public TVal this[TRow r, TColumn c]
 		{
-			IsOpen = false;
-			return this;
+			get
+			{
+				var addr = r + ":" + c;
+				if (!table.vals.ContainsKey(addr)) return default(TVal);
+				return table.vals[addr];
+			}
+			set
+			{
+				var addr = r + ":" + c;
+				if (!table.Rows.Contains(r)) table.Rows.Add(r);
+				if (!table.Columns.Contains(c)) table.Columns.Add(c);
+				if (!table.vals.ContainsKey(addr))
+					table.vals.Add(addr, value);
+				else table.vals[addr] = value;
+			}
 		}
 	}
-
-	private bool IsOpen = true;
-	public List<TColumn> Columns { get; private set; } = new List<TColumn>();
-	public List<TRow> Rows { get; private set; } = new List<TRow>();
-
-	private Dictionary<Tuple<TRow, TColumn>, TValue> table
-		= new Dictionary<Tuple<TRow, TColumn>, TValue>();
 }
