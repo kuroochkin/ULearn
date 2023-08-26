@@ -1,64 +1,66 @@
 ﻿namespace Generics.Robots;
 
-public abstract class RobotAI
+public interface IRobotAI<out TCommand>
 {
-	public abstract object GetCommand();
+	public TCommand GetCommand();
 }
 
-public class ShooterAI : RobotAI
+public class ShooterAI : IRobotAI<IShooterMoveCommand>
 {
 	int counter = 1;
 
-	public override object GetCommand()
+	public Point Destination { get; set; }
+
+	public IShooterMoveCommand GetCommand()
 	{
 		return ShooterCommand.ForCounter(counter++);
 	}
 }
 
-public class BuilderAI : RobotAI
+public class BuilderAI : IRobotAI<IMoveCommand>
 {
 	int counter = 1;
 
-	public override object GetCommand()
+	public Point Destination { get; set; }
+
+	public IMoveCommand GetCommand()
 	{
 		return BuilderCommand.ForCounter(counter++);
 	}
 }
 
-public abstract class Device
+public interface IDevice<in TCommand>
 {
-	public abstract string ExecuteCommand(object command);
+	public string ExecuteCommand(TCommand command);
 }
 
-public class Mover : Device
+public class Mover : IDevice<IMoveCommand>
 {
-	public override string ExecuteCommand(object _command)
+	public string ExecuteCommand(IMoveCommand command)
 	{
-		var command = _command as IMoveCommand;
-		if (command == null)
+		if (command is null)
 			throw new ArgumentException();
 		return $"MOV {command.Destination.X}, {command.Destination.Y}";
 	}
 }
 
-public class ShooterMover : Device
+public class ShooterMover : IDevice<IShooterMoveCommand>
 {
-	public override string ExecuteCommand(object _command)
+	public string ExecuteCommand(IShooterMoveCommand command)
 	{
-		var command = _command as IShooterMoveCommand;
-		if (command == null)
+		if (command is null)
 			throw new ArgumentException();
 		var hide = command.ShouldHide ? "YES" : "NO";
 		return $"MOV {command.Destination.X}, {command.Destination.Y}, USE COVER {hide}";
 	}
 }
 
-public class Robot
+public class Robot<TCommand>
 {
-	private readonly RobotAI ai;
-	private readonly Device device;
+	private readonly IRobotAI<TCommand> ai;
+	private readonly IDevice<TCommand> device;
 
-	public Robot(RobotAI ai, Device executor)
+	public Robot(IRobotAI<TCommand> ai, IDevice<TCommand> executor)
 	{
 		this.ai = ai;
 		this.device = executor;
@@ -74,9 +76,12 @@ public class Robot
 			yield return device.ExecuteCommand(command);
 		}
 	}
+}
 
-	public static Robot Create<TCommand>(RobotAI ai, Device executor)
+public static class Robot
+{
+	public static Robot<TCommand> Create<TCommand>(IRobotAI<TCommand> ai, IDevice<TCommand> executor)
 	{
-		return new Robot(ai, executor);
+		return new Robot<TCommand>(ai, executor);
 	}
 }
