@@ -24,5 +24,5 @@ List<Measurement> data = new List<Measurement>
 			}
 		};
 
-var actual = ReportMakerHelper.MeanAndStdHtmlReport(data);
+var actual = ReportMakerHelper.MedianHtmlReport(data);
 Console.WriteLine(actual);
