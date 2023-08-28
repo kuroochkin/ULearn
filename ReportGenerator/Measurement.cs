@@ -6,3 +6,4 @@ public class Measurement
 	public double Humidity { get; set; }
 
 }
+
