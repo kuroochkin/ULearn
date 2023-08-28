@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Reflection;
 
@@ -54,12 +53,61 @@ public class Specifier<T> : ISpecifier
 
 	public ApiParamDescription GetApiMethodParamFullDescription(string methodName, string paramName)
 	{
-		throw new NotImplementedException();
-	}
+		var attributeParametrs = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
+			.Where(x => x.Name == methodName)
+			.FirstOrDefault()
+			.GetParameters()
+			.Where(x => x.Name == paramName)
+			.FirstOrDefault();
 
+		var result = new ApiParamDescription
+		{
+			ParamDescription = new CommonDescription(paramName, attributeParametrs.GetCustomAttributes().OfType<ApiDescriptionAttribute>().First().Description),
+			Required = attributeParametrs.GetCustomAttributes().OfType<ApiRequiredAttribute>().First().Required,
+			MinValue = attributeParametrs.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MinValue,
+			MaxValue = attributeParametrs.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MaxValue,
+		};
+
+		return result;
+	}
+		
 	public ApiMethodDescription GetApiMethodFullDescription(string methodName)
 	{
-		throw new NotImplementedException();
+		var method = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
+			.Where(x => x.GetCustomAttributes().OfType<ApiDescriptionAttribute>().Any())
+			.Where(x => x.Name == methodName)
+			.FirstOrDefault();
+
+		if (method.GetParameters() == null)
+			return null;
+
+		var paramDescriptions = method.GetParameters().Select(item => new ApiParamDescription
+		{
+			ParamDescription = new CommonDescription(item.Name, item.GetCustomAttributes().OfType<ApiDescriptionAttribute>().First().Description),
+			Required = item.GetCustomAttributes().OfType<ApiRequiredAttribute>().First().Required,
+			MinValue = item.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MinValue,
+			MaxValue = item.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MaxValue,
+		})
+		.ToArray();
+
+		var result = new ApiMethodDescription
+		{
+			MethodDescription = new CommonDescription(
+				methodName, 
+				method.GetCustomAttributes().OfType<ApiDescriptionAttribute>().First().Description
+				),
+			ParamDescriptions = paramDescriptions,
+			ReturnDescription = new ApiParamDescription
+			{
+				ParamDescription = new CommonDescription(),
+				Required = method.GetCustomAttributes().OfType<ApiRequiredAttribute>().First().Required,
+				MinValue = method.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MinValue,
+				MaxValue = method.GetCustomAttributes().OfType<ApiIntValidationAttribute>().First().MaxValue,
+			}
+		};
+
+		return result;
 	}
 }
+
 
