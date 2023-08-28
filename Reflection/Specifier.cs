@@ -14,51 +14,46 @@ public class Specifier<T> : ISpecifier
 			Select(x => x.Name)
 			.ToArray();
 	}
+	
 
 	public string GetApiMethodDescription(string methodName)
 	{
-		var method = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
-			.Where(x => x.GetCustomAttributes().OfType<ApiDescriptionAttribute>().Any())
-			.Where(x => x.Name == methodName)
-			.FirstOrDefault();
-
-		if (method is null)
-			return null;
-		
-		return method.GetCustomAttributes().OfType<ApiDescriptionAttribute>().First().Description;
+		return typeof(T)
+			.GetMethod(methodName)?
+			.GetCustomAttributes()
+			.OfType<ApiDescriptionAttribute>()
+			.FirstOrDefault()?.Description;
 	}
 
 	public string[] GetApiMethodParamNames(string methodName)
 	{
-		return typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
-			.Where(x => x.Name == methodName)
-			.FirstOrDefault()
+		return typeof(T)
+			.GetMethod(methodName)?
 			.GetParameters()
 			.Select(x => x.Name.ToString())
 			.ToArray();
-
 	}
 
 	public string GetApiMethodParamDescription(string methodName, string paramName)
 	{
-		var parametr = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
-			.Where(x => x.Name == methodName)
-			.FirstOrDefault()
+		var parametr = typeof(T).GetMethods()
+			.Where(x => x.GetCustomAttributes()
+			.OfType<ApiMethodAttribute>().Any())
+			.FirstOrDefault(x => x.Name == methodName)
 			.GetParameters()
-			.Where(x => x.Name == paramName)
-			.FirstOrDefault();
+			.FirstOrDefault(x => x.Name == paramName);
 			
 		return parametr.GetCustomAttributes().OfType<ApiDescriptionAttribute>().First().Description;
 	}
 
 	public ApiParamDescription GetApiMethodParamFullDescription(string methodName, string paramName)
 	{
-		var attributeParametrs = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
-			.Where(x => x.Name == methodName)
-			.FirstOrDefault()
+		var attributeParametrs = typeof(T).GetMethods()
+			.Where(x => x.GetCustomAttributes()
+			.OfType<ApiMethodAttribute>().Any())
+			.FirstOrDefault(x => x.Name == methodName)
 			.GetParameters()
-			.Where(x => x.Name == paramName)
-			.FirstOrDefault();
+			.FirstOrDefault(x => x.Name == paramName);
 
 		var result = new ApiParamDescription
 		{
@@ -75,8 +70,7 @@ public class Specifier<T> : ISpecifier
 	{
 		var method = typeof(T).GetMethods().Where(x => x.GetCustomAttributes().OfType<ApiMethodAttribute>().Any())
 			.Where(x => x.GetCustomAttributes().OfType<ApiDescriptionAttribute>().Any())
-			.Where(x => x.Name == methodName)
-			.FirstOrDefault();
+			.FirstOrDefault(x => x.Name == methodName);
 
 		if (method.GetParameters() == null)
 			return null;
